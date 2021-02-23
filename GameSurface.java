@@ -132,20 +132,26 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
 
         
 
-        // draw the space ship
+        // draw bird with animation depending on going up or down.
         if (jumpRemaining != 0) {
+            //body
             g.setColor(Color.yellow);
             g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
+            //wings
             g.setColor(Color.black);
             g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / 1);
+            //eyes
             g.setColor(Color.red);
             g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
         }
         else {
+            //body
             g.setColor(Color.yellow);
             g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
+            //wings
             g.setColor(Color.black);
             g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / -1);
+            //eyes
             g.setColor(Color.red);
             g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
         }
