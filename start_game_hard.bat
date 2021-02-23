@@ -1,2 +1,2 @@
 javac App.java
-java App
+java App hard

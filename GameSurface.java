@@ -35,9 +35,11 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
     private int width;
     private int height;
     private int highscore = 0;
+    private String difficulty;
     HighScoreList highscoreList;
 
-    public GameSurface(final int width, final int height) {
+    public GameSurface(final int width, final int height, String difficulty) {
+        this.difficulty = difficulty;
         this.width = width;
         this.height = height;
 
