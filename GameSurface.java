@@ -54,12 +54,6 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
 
         // TOMMI: Create highscore list
         highscoreList = new HighScoreList();
-        int position = 1;
-        System.out.printf("Current highscore list:");
-        for (HighscoreItem item : highscoreList.getList()) {
-            System.out.printf("#%d: %s%n", position, item);
-            position++;
-        }
     }
 
     @Override
@@ -130,25 +124,22 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             warpPipe.drawPipe(g);
         }
 
-        
+        //draw the bird
+        g.setColor(Color.yellow);
+        g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
 
-        // draw the space ship
-        if (jumpRemaining != 0) {
-            g.setColor(Color.yellow);
-            g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
-            g.setColor(Color.black);
+        //make the wings flap when bird jumps
+        g.setColor(Color.black);
+
+        if(jumpRemaining != 0) {
             g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / 1);
-            g.setColor(Color.red);
-            g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
         }
         else {
-            g.setColor(Color.yellow);
-            g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
-            g.setColor(Color.black);
             g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / -1);
-            g.setColor(Color.red);
-            g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
         }
+
+        g.setColor(Color.red);
+        g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
     }
 
     @Override
@@ -189,7 +180,6 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
         for (int i = 0; i < toRemove.size(); ++i) {
             Dimension d = getSize();
             pipeList.add(new WarpPipes(d.width, d.height));
-
             // For every pipe that passes the screen, one currentScore is added.
             // If your current currentScore is higher than your highscore,
             // the highscore is updated.
@@ -201,27 +191,23 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             // addWarpPipe(d.width, d.height);
         }
 
-        
         WarpPipes newPipeToAdd = null;
-        for (WarpPipes pipe : pipeList) {
 
-            // Is there only one pipe in the game? In that case add one more.
-            if (pipeList.size() == 1) {
-
-                // Only add new pipe if current pipe has moved more than halfway across the screen.
-                if (pipe.halfwayAcrossScreen(this.width)) {
-                    System.out.println("Pipe is halfway across screen.");
-                    newPipeToAdd = new WarpPipes(width, height);
+        //Is there only one pipe in the game? In that case add one more (only in hard mode).
+        if (difficulty.equals("hard") && pipeList.size() == 1) {
+            for(WarpPipes pipe : pipeList) {
+            // Only add new pipe if current pipe has moved more than halfway across the screen.
+                if(pipe.halfwayAcrossScreen(this.width)) {
+                        newPipeToAdd = new WarpPipes(width, height);
                 }
-
             }
-
         }
-        // Add an additional pipe to the ongoing game.
+
+        //Add an additional pipe to the ongoing game.
         if (newPipeToAdd != null) {
             pipeList.add(newPipeToAdd);
         }
-        
+   
         // jumpRemaining is an instance variable, everytime
         // the bird jumps its set to 30. Every frame/actionPerformed
         // the bird jumps 5px in Y-direction until jumpRemaining
