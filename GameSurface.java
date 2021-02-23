@@ -201,6 +201,27 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             // addWarpPipe(d.width, d.height);
         }
 
+        
+        WarpPipes newPipeToAdd = null;
+        for (WarpPipes pipe : pipeList) {
+
+            // Is there only one pipe in the game? In that case add one more.
+            if (pipeList.size() == 1) {
+
+                // Only add new pipe if current pipe has moved more than halfway across the screen.
+                if (pipe.halfwayAcrossScreen(this.width)) {
+                    System.out.println("Pipe is halfway across screen.");
+                    newPipeToAdd = new WarpPipes(width, height);
+                }
+
+            }
+
+        }
+        // Add an additional pipe to the ongoing game.
+        if (newPipeToAdd != null) {
+            pipeList.add(newPipeToAdd);
+        }
+        
         // jumpRemaining is an instance variable, everytime
         // the bird jumps its set to 30. Every frame/actionPerformed
         // the bird jumps 5px in Y-direction until jumpRemaining
