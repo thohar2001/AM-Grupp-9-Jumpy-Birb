@@ -1,17 +1,10 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -120,7 +113,6 @@ public class HighScoreList {
     private void loadHighscoreFile() throws FileNotFoundException, IOException {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(HIGHSCORE_FILE_STRING))) {
-            String line;
             System.out.println("Reading file:");
             while (reader.ready()) {
                 String name=reader.readLine();

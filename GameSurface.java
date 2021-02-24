@@ -15,44 +15,38 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-/**
- * A simple panel with a space invaders "game" in it. This is just to
- * demonstrate the bare minimum of stuff than can be done drawing on a panel.
- * This is by no means very good code.
- * 
- */
 public class GameSurface extends JPanel implements ActionListener, KeyListener {
     private static final long serialVersionUID = 6260582674762246325L;
     private static final int LINE_HEIGHT_IN_PIXELS = 48;
     private boolean gameOver;
     private Timer timer;
-    private List<WarpPipes> pipeList; // used to be: private List<Rectangle> aliens;
+    private List<WarpPipe> pipes; // used to be: private List<Rectangle> aliens;
     private Rectangle bird;
-    private int jumpRemaining;
+    private int jumpRemaining; // Related to Gravity
     private int frames;
     private int gravity;
     private int currentScore;
-    private int width;
-    private int height;
+    private Dimension screenDimension;
+    //private int screenWidth;
+    //private int screenHeight;
     private int highscore = 0;
     private String difficulty;
     HighScoreList highscoreList;
 
     public GameSurface(final int width, final int height, String difficulty) {
         this.difficulty = difficulty;
-        this.width = width;
-        this.height = height;
+        screenDimension = new Dimension(width, height);
 
         this.gameOver = false;
-        this.pipeList = new ArrayList<>();
+        this.pipes = new ArrayList<>();
 
-        pipeList.add(new WarpPipes(width, height));
+        pipes.add(new WarpPipe(screenDimension.width, screenDimension.height));
 
-        this.bird = new Rectangle(20, width / 2 - 15, 30, 20);
+        this.bird = new Rectangle(20, screenDimension.width / 2 - 15, 30, 20);
         this.timer = new Timer(20, this);
         this.timer.start();
 
-        // TOMMI: Create highscore list
+        // Create highscore list
         highscoreList = new HighScoreList();
     }
 
@@ -63,83 +57,109 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
     }
 
     /**
+      * Draws a bird to GameSurface for each frame 
+      */  
+    private void repaintBird(Graphics g) {
+        // draw the bird
+        g.setColor(Color.yellow);
+        g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
+
+        // make the wings flap when bird jumps
+        g.setColor(Color.black);
+
+        if (jumpRemaining != 0) {
+            g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / 1);
+        } else {
+            g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / -1);
+        }
+
+        g.setColor(Color.red);
+        g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
+    }
+
+    private void paintGameoverScreen(Graphics g) {
+        g.setColor(Color.black);
+        g.fillRect(0, 0, screenDimension.width, screenDimension.height);
+        g.setColor(Color.red);
+        g.setFont(new Font("Arial", Font.BOLD, LINE_HEIGHT_IN_PIXELS));
+    }
+
+    /**
+     * Draws the pair of warp pipes.
+     */
+    private void drawPipe(Graphics g, WarpPipe pipe) {
+        g.setColor(Color.green);
+        Rectangle r1 = pipe.getRectangle1();
+        Rectangle r2 = pipe.getRectangle2();
+        g.fillRect(r1.x, r1.y, r1.width, r1.height);
+        g.fillRect(r2.x, r2.y, r2.width, r2.height);
+    }
+
+    private void paintHighscores(Graphics g, boolean achievedHighscore) {
+        String nameOfUser = null;
+
+        if (achievedHighscore) {
+            nameOfUser = JOptionPane.showInputDialog(this, "What's your name?", "Game Over: you killed Jumpy Birb!",
+                    JOptionPane.PLAIN_MESSAGE);
+            if (nameOfUser == null) {
+                nameOfUser = "Player";
+            }
+            highscoreList.addHighscore(new HighscoreItem(currentScore, nameOfUser));
+
+        }
+
+        paintGameoverScreen(g);
+
+        String displayName;
+        if (achievedHighscore) {
+            displayName = nameOfUser;
+        } else {
+            displayName = "player";
+        }
+
+        g.drawString("Game over " + displayName + "! Your score: " + currentScore, 20, 48);
+
+        // Skriv ut highscorelist:
+        int position = 1;
+        g.drawString("Current highscore list:", 20, (screenDimension.width) + 24 + LINE_HEIGHT_IN_PIXELS);
+        for (HighscoreItem item : HighScoreList.getList()) {
+            g.drawString("#" + position + ": " + item.getName() + ": " + item.getScore(), 20,
+                    +24 + (LINE_HEIGHT_IN_PIXELS * 2) + (LINE_HEIGHT_IN_PIXELS * position));
+            position++;
+        }
+        try {
+            HighScoreList.saveHighscoreFile();
+        } catch (IOException e) {
+            // custom title, error icon
+            JOptionPane.showMessageDialog(this, "Unable to save highscore file.", "File error.",
+                    JOptionPane.ERROR_MESSAGE);
+            System.err.print(e.getStackTrace());
+        }
+    }
+
+    /**
      * Call this method when the graphics needs to be repainted on the graphics
      * surface.
      * 
      * @param g the graphics to paint on
      */
     private void repaint(Graphics g) {
-        final Dimension d = this.getSize();
-        String nameOfUser = null;
+        
         boolean achievedHighscore = currentScore > highscoreList.getLowestHighscore();
         if (gameOver) {
-            if (achievedHighscore) {
-                nameOfUser = JOptionPane.showInputDialog(this, 
-                    "What's your name?",
-                    "Game Over: you killed Jumpy Birb!", 
-                    JOptionPane.PLAIN_MESSAGE);
-                highscoreList.addHighscore(new HighscoreItem(currentScore, nameOfUser));
+            paintHighscores(g, achievedHighscore);
+
+        } else {
+            // fill the background
+            g.setColor(Color.blue);
+            g.fillRect(0, 0, screenDimension.width, screenDimension.height);
+
+            // draw the Warp Pipes.
+            for (WarpPipe warpPipe : pipes) {
+                drawPipe(g, warpPipe);
             }
-            g.setColor(Color.black);
-            g.fillRect(0, 0, d.width, d.height);
-            g.setColor(Color.red);
-            g.setFont(new Font("Arial", Font.BOLD, LINE_HEIGHT_IN_PIXELS));
-
-            String displayName;
-            if (achievedHighscore) {
-                displayName = nameOfUser;
-            } else {
-                displayName = "player";
-            }
-
-            g.drawString("Game over " + displayName + "! Your score: " + currentScore, 20, 48);
-            // g.drawString("Highscore: " + highscore, 20, (d.width / 2) + 24);
-
-            // Skriv ut highscorelist:
-            int position = 1;
-            g.drawString("Current highscore list:", 20, (d.width) + 24 + LINE_HEIGHT_IN_PIXELS);
-            for (HighscoreItem item : highscoreList.getList()) {
-                g.drawString("#" + position + ": " + item.getName() + ": " + item.getScore(), 20,
-                        +24 + (LINE_HEIGHT_IN_PIXELS * 2) + (LINE_HEIGHT_IN_PIXELS * position));
-                position++;
-            }
-            try {
-                HighScoreList.saveHighscoreFile();
-            } catch (IOException e) {
-                //custom title, error icon
-                JOptionPane.showMessageDialog(this,
-                    "Unable to save highscore file.",
-                    "File error.",
-                    JOptionPane.ERROR_MESSAGE);
-                    System.err.print(e.getStackTrace());
-            }
-            return;
+            repaintBird(g);
         }
-        // fill the background
-        g.setColor(Color.blue);
-        g.fillRect(0, 0, d.width, d.height);
-        // draw the Warp Pipes.
-        
-        for (WarpPipes warpPipe : pipeList) {
-            warpPipe.drawPipe(g);
-        }
-
-        //draw the bird
-        g.setColor(Color.yellow);
-        g.fillRoundRect(bird.x, bird.y, bird.width, bird.height, 40, 300);
-
-        //make the wings flap when bird jumps
-        g.setColor(Color.black);
-
-        if(jumpRemaining != 0) {
-            g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / 1);
-        }
-        else {
-            g.fillRect(bird.x + 10, bird.y + 10, bird.width / 3, bird.height / -1);
-        }
-
-        g.setColor(Color.red);
-        g.fillRect(bird.x + 25, bird.y + 7, bird.width / 7, bird.height / 5);
     }
 
     @Override
@@ -151,16 +171,12 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
         // This will make the game end when you hit a
         // warp pipe.
 
-        // TODO: Show currentScore and highscore when game is over
-        // TODO: Make it possible to start a new round again
-
         if (gameOver) {
             timer.stop();
             return;
         }
-        final List<WarpPipes> toRemove = new ArrayList<>();
-        // Removed by Tommi: for (Rectangle alien : aliens) {
-        for (WarpPipes pipe : pipeList) {
+        final List<WarpPipe> toRemove = new ArrayList<>();
+        for (WarpPipe pipe : pipes) {
             pipe.translate(-5, 0);
 
             if (pipe.noLongerOnScreen()) {
@@ -169,17 +185,16 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
                 toRemove.add(pipe);
             }
 
-            // Space ship has crashed into pipe
+            // Bird has crashed into pipe
             if (pipe.intersects(bird)) {
                 gameOver = true;
             }
         }
 
-        pipeList.removeAll(toRemove);
+        pipes.removeAll(toRemove);
         // add a new pair of Warp Pipes for every one that was removed.
         for (int i = 0; i < toRemove.size(); ++i) {
-            Dimension d = getSize();
-            pipeList.add(new WarpPipes(d.width, d.height));
+            pipes.add(new WarpPipe(screenDimension.width, screenDimension.height));
             // For every pipe that passes the screen, one currentScore is added.
             // If your current currentScore is higher than your highscore,
             // the highscore is updated.
@@ -191,23 +206,25 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             // addWarpPipe(d.width, d.height);
         }
 
-        WarpPipes newPipeToAdd = null;
+        WarpPipe newPipeToAdd = null;
 
-        //Is there only one pipe in the game? In that case add one more (only in hard mode).
-        if (difficulty.equals("hard") && pipeList.size() == 1) {
-            for(WarpPipes pipe : pipeList) {
-            // Only add new pipe if current pipe has moved more than halfway across the screen.
-                if(pipe.halfwayAcrossScreen(this.width)) {
-                        newPipeToAdd = new WarpPipes(width, height);
+        // Is there only one pipe in the game? In that case add one more (only in hard
+        // mode).
+        if (difficulty.equals("hard") && pipes.size() == 1) {
+            for (WarpPipe pipe : pipes) {
+                // Only add new pipe if current pipe has moved more than halfway across the
+                // screen.
+                if (pipe.halfwayAcrossScreen(screenDimension.width)) {
+                    newPipeToAdd = new WarpPipe(screenDimension.width, screenDimension.height);
                 }
             }
         }
 
-        //Add an additional pipe to the ongoing game.
+        // Add an additional pipe to the ongoing game.
         if (newPipeToAdd != null) {
-            pipeList.add(newPipeToAdd);
+            pipes.add(newPipeToAdd);
         }
-   
+
         // jumpRemaining is an instance variable, everytime
         // the bird jumps its set to 30. Every frame/actionPerformed
         // the bird jumps 5px in Y-direction until jumpRemaining
@@ -238,7 +255,7 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
         // if bird falls below gamesurface area = game over
         if (bird.y > 800) {
             gameOver = true;
-        } 
+        }
 
         this.repaint();
     }
@@ -263,17 +280,17 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
 
         if (gameOver && kc == KeyEvent.VK_SPACE) {
             // When game is over, gameover screen will show and timer will stop
-            // To restart game, click space button. 
+            // To restart game, click space button.
 
             // New bird is drawn and will start at the same position
             // as when the game started the first time.
-            this.bird = new Rectangle(20, width / 2 - 15, 30, 20);
+            this.bird = new Rectangle(20, screenDimension.width / 2 - 15, 30, 20);
 
             // The List of pipes have to be cleared, otherwise
             // the old pipes from last round will still appear on the screen.
             // Then add a new pipe again.
-            pipeList.clear();
-            pipeList.add(new WarpPipes(width, height));
+            pipes.clear();
+            pipes.add(new WarpPipe(screenDimension.width, screenDimension.height));
 
             // Clear the current current score
             currentScore = 0;
