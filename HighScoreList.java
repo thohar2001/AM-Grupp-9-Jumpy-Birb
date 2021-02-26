@@ -4,6 +4,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,15 +15,18 @@ public class HighScoreList {
     static final int MAX_SIZE = 10;
     private static List<HighscoreItem> highscoreList;
     private static final String HIGHSCORE_FILE_STRING = "highscore.txt";
+    private static final Path highscoreFile = FileSystems.getDefault().getPath(HIGHSCORE_FILE_STRING);
 
     public HighScoreList() {
         highscoreList = new ArrayList<>();
-        loadHighscore();
+        if(Files.exists(highscoreFile)) {
+            loadHighscore();
+        }
     }
 
     public int getLowestHighscore() {
         if (highscoreList.size() < MAX_SIZE) {
-            return 1;
+            return 0;
         }
 
         if (highscoreList.size() <= MAX_SIZE) {
@@ -88,7 +94,7 @@ public class HighScoreList {
         return highscoreList;
     }
 
-    private void loadHighscore() {       
+    private void loadHighscore() {      
         try {
             loadHighscoreFile();
         } catch (IOException e) {
@@ -113,7 +119,6 @@ public class HighScoreList {
     private void loadHighscoreFile() throws FileNotFoundException, IOException {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(HIGHSCORE_FILE_STRING))) {
-            System.out.println("Reading file:");
             while (reader.ready()) {
                 String name=reader.readLine();
                 int score = Integer.parseInt(reader.readLine());

@@ -32,6 +32,10 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
     private int highscore = 0;
     private String difficulty;
     HighScoreList highscoreList;
+    // to fix bug regarding tabbing down under gameOver screen
+    private boolean preventDialogTabUp = false;
+    private String recentName;
+
 
     public GameSurface(final int width, final int height, String difficulty) {
         this.difficulty = difficulty;
@@ -98,7 +102,8 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
     private void paintHighscores(Graphics g, boolean achievedHighscore) {
         String nameOfUser = null;
 
-        if (achievedHighscore) {
+
+        if (achievedHighscore && !preventDialogTabUp) {
             nameOfUser = JOptionPane.showInputDialog(this, "What's your name?", "Game Over: you killed Jumpy Birb!",
                     JOptionPane.PLAIN_MESSAGE);
             if (nameOfUser == null) {
@@ -106,6 +111,12 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             }
             highscoreList.addHighscore(new HighscoreItem(currentScore, nameOfUser));
 
+            recentName = nameOfUser;
+            preventDialogTabUp = true;
+        }
+
+        if(nameOfUser == null) {
+            nameOfUser = recentName;
         }
 
         paintGameoverScreen(g);
@@ -117,14 +128,13 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             displayName = "player";
         }
 
-        g.drawString("Game over " + displayName + "! Your score: " + currentScore, 20, 48);
-
+        g.drawString("Game over " + displayName, 20, 48);
+        g.drawString("Your score was: " + currentScore, 20, 96);
         // Skriv ut highscorelist:
         int position = 1;
-        g.drawString("Current highscore list:", 20, (screenDimension.width) + 24 + LINE_HEIGHT_IN_PIXELS);
         for (HighscoreItem item : HighScoreList.getList()) {
             g.drawString("#" + position + ": " + item.getName() + ": " + item.getScore(), 20,
-                    +24 + (LINE_HEIGHT_IN_PIXELS * 2) + (LINE_HEIGHT_IN_PIXELS * position));
+                    +48 + (LINE_HEIGHT_IN_PIXELS * 2) + (LINE_HEIGHT_IN_PIXELS * position));
             position++;
         }
         try {
@@ -146,6 +156,7 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
     private void repaint(Graphics g) {
         
         boolean achievedHighscore = currentScore > highscoreList.getLowestHighscore();
+        
         if (gameOver) {
             paintHighscores(g, achievedHighscore);
 
@@ -232,8 +243,8 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
         // in a smooth motion.
 
         if (jumpRemaining > 0) {
-            bird.translate(0, -2);
-            jumpRemaining = jumpRemaining - 2;
+            bird.translate(0, -5);
+            jumpRemaining = jumpRemaining - 5;
             gravity = 0;
         }
 
@@ -247,7 +258,7 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
 
         else {
             bird.translate(0, gravity);
-            if (frames % 7 == 0) {
+            if (frames % 3 == 0) {
                 frames = 0;
                 gravity++;
             }
@@ -300,6 +311,7 @@ public class GameSurface extends JPanel implements ActionListener, KeyListener {
             // Set gameOver to false again so that the repaint method will
             // draw the game and then start the timer again.
             gameOver = false;
+            preventDialogTabUp = false;
             timer.start();
         }
 
